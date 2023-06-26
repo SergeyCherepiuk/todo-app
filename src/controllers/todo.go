@@ -19,7 +19,7 @@ func (controller TodoContoller) Create(w http.ResponseWriter, req *http.Request)
 	if req.Method != "POST" {
 		w.WriteHeader(http.StatusNotFound)
 		encoder.Encode("message: Not found")
-		return				
+		return
 	}
 
 	todo := new(models.Todo)
@@ -41,7 +41,28 @@ func (controller TodoContoller) Create(w http.ResponseWriter, req *http.Request)
 		encoder.Encode("message: Internal server error")
 		return
 	}
-	
+
 	w.WriteHeader(http.StatusOK)
 	encoder.Encode("message: Todo successfully created")
+}
+
+func (controller TodoContoller) ReadAll(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	encoder := json.NewEncoder(w)
+
+	if req.Method != "GET" {
+		w.WriteHeader(http.StatusNotFound)
+		encoder.Encode("message: Not found")
+		return
+	}
+
+	todos, err := controller.Repository.Read()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		encoder.Encode("message: Internal server error")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	encoder.Encode(todos)
 }
