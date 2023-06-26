@@ -13,9 +13,16 @@ type TodoContoller struct {
 }
 
 func (controller TodoContoller) Create(w http.ResponseWriter, req *http.Request) {
-	todo := new(models.Todo)
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
+
+	if req.Method != "POST" {
+		w.WriteHeader(http.StatusNotFound)
+		encoder.Encode("message: Not found")
+		return				
+	}
+
+	todo := new(models.Todo)
 
 	if err := json.NewDecoder(req.Body).Decode(todo); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
