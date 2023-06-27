@@ -42,7 +42,7 @@ func (controller TodoContoller) Create(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	encoder.Encode("message: Todo successfully created")
 }
 
