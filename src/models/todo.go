@@ -7,14 +7,15 @@ import (
 	"strings"
 )
 
+// TODO: All id field
 type Todo struct {
-	Title    string   `json:"title"`
-	Category Category `json:"category"`
-	Priority Priority `json:"priority"`
+	Title    string `json:"title" db:"title"`
+	Category string `json:"category" db:"category"`
+	Priority int    `json:"priority" db:"priority"`
 }
 
 func (t Todo) String() string {
-	return fmt.Sprintf("%s, %s, %d\n", t.Title, t.Category.Name, t.Priority)
+	return fmt.Sprintf("%s, %s, %d\n", t.Title, t.Category, t.Priority)
 }
 
 func TodoFromString(s string) (Todo, error) {
@@ -29,8 +30,8 @@ func TodoFromString(s string) (Todo, error) {
 	}
 
 	return Todo{
-		Title: data[0],
-		Category: Category{Name: data[1]},
-		Priority: Priority(priority),
+		Title:    data[0],
+		Category: data[1],
+		Priority: int(priority),
 	}, nil
 }

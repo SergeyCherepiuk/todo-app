@@ -20,5 +20,5 @@
 # Go workspace file
 go.work
 
-# Executable
-src
+# Environment file
+.env

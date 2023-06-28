@@ -14,42 +14,28 @@ type TodoRepository interface {
 
 type TodoRepositoryImpl struct{}
 
-func (repository TodoRepositoryImpl) Create(todo models.Todo) error {
-	file, err := os.OpenFile("./database/db.txt", os.O_APPEND|os.O_WRONLY, os.ModeAppend)
-	if err != nil {
-		return err
-	}
-
-	if _, err := file.WriteString(todo.String()); err != nil {
-		return err
-	}
-	return nil
+// TODO: Add id parameter
+func (repository TodoRepositoryImpl) GetById() (models.Todo, error) {
+	//TODO: Implement
+	return models.Todo{}, nil
 }
 
-func (repository TodoRepositoryImpl) Read() ([]models.Todo, error) {
-	file, err := os.Open("./database/db.txt")
-	if err != nil {
-		return []models.Todo{}, nil
-	}
+func (repository TodoRepositoryImpl) GetAll() ([]models.Todo, error) {
+	// TODO: Implement
+	return []models.Todo{}, nil	
+}
 
-	var fileContent []byte
-	if fileStats, err := file.Stat(); err != nil {
-		return []models.Todo{}, err
-	} else {
-		fileContent = make([]byte, fileStats.Size())
-	}
+func (repository TodoRepositoryImpl) Create(todo models.Todo) error {
+	// TODO: Implement
+	return nil	
+}
 
-	if _, err = file.Read(fileContent); err != nil {
-		return []models.Todo{}, err
-	}
+func (repository TodoRepositoryImpl) Update(todo models.Todo) error {
+	// TODO: Implement
+	return nil	
+}
 
-	todos := []models.Todo{}
-	for _, line := range strings.Split(string(fileContent), "\n") {
-		todo, err := models.TodoFromString(line)
-		if err != nil {
-			continue
-		}
-		todos = append(todos, todo)
-	}
-	return todos, nil
+func (repository TodoRepositoryImpl) Delete(todo models.Todo) error {
+	// TODO: Implement
+	return nil
 }

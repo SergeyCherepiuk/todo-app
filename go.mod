@@ -9,7 +9,9 @@ require (
 	github.com/githubnemo/CompileDaemon v1.4.0 // indirect
 	github.com/gofiber/fiber/v2 v2.47.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/klauspost/compress v1.16.3 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
@@ -22,5 +24,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.47.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
+	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 )
