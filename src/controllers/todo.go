@@ -1,68 +1,38 @@
 package controllers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/SergeyCherepiuk/todo-app/src/models"
 	"github.com/SergeyCherepiuk/todo-app/src/repositories"
+	"github.com/gofiber/fiber/v2"
 )
 
 type TodoContoller struct {
 	Repository repositories.TodoRepositoryImpl
 }
 
-func (controller TodoContoller) Create(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	encoder := json.NewEncoder(w)
-
-	if req.Method != "POST" {
-		w.WriteHeader(http.StatusNotFound)
-		encoder.Encode("message: Not found")
-		return
-	}
-
+func (controller TodoContoller) Create(c *fiber.Ctx) error {
 	todo := new(models.Todo)
-
-	if err := json.NewDecoder(req.Body).Decode(todo); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		encoder.Encode("message: Internal server error")
-		return
+	if err := c.BodyParser(&todo); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON("message: Internal server error")
 	}
 
 	if todo.Title == "" || todo.Category.Name == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		encoder.Encode("message: Not enough information provided")
-		return
+		return c.Status(http.StatusBadRequest).JSON("message: Not enough information provided")
 	}
 
 	if err := controller.Repository.Create(*todo); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		encoder.Encode("message: Internal server error")
-		return
+		return c.Status(http.StatusInternalServerError).JSON("message: Internal server error")
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	encoder.Encode("message: Todo successfully created")
+	return c.Status(http.StatusOK).JSON("message: Todo successfully created")
 }
 
-func (controller TodoContoller) ReadAll(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	encoder := json.NewEncoder(w)
-
-	if req.Method != "GET" {
-		w.WriteHeader(http.StatusNotFound)
-		encoder.Encode("message: Not found")
-		return
-	}
-
+func (controller TodoContoller) ReadAll(c *fiber.Ctx) error {
 	todos, err := controller.Repository.Read()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		encoder.Encode("message: Internal server error")
-		return
+		return c.Status(http.StatusInternalServerError).JSON("message: Internal server error")
 	}
-
-	w.WriteHeader(http.StatusOK)
-	encoder.Encode(todos)
+	return c.Status(http.StatusOK).JSON(todos)
 }
