@@ -14,8 +14,9 @@ func main() {
 	todoRepository := new(repositories.TodoRepositoryImpl)
 	todoController := controllers.TodoContoller{Repository: *todoRepository}
 
-	app.Get("/api/todo", todoController.ReadAll)
-	app.Post("/api/todo", todoController.Create)
+	api := app.Group("/api")
+	api.Get("/todo", todoController.ReadAll)
+	api.Post("/todo", todoController.Create)
 
 	app.Listen(":8000")
 }

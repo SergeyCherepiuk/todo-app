@@ -15,7 +15,7 @@ type TodoRepository interface {
 type TodoRepositoryImpl struct{}
 
 func (repository TodoRepositoryImpl) Create(todo models.Todo) error {
-	file, err := os.OpenFile("./src/database/db.txt", os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	file, err := os.OpenFile("./database/db.txt", os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (repository TodoRepositoryImpl) Create(todo models.Todo) error {
 }
 
 func (repository TodoRepositoryImpl) Read() ([]models.Todo, error) {
-	file, err := os.Open("./src/database/db.txt")
+	file, err := os.Open("./database/db.txt")
 	if err != nil {
 		return []models.Todo{}, nil
 	}
