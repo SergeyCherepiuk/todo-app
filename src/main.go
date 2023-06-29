@@ -22,7 +22,7 @@ func main() {
 
 	api := app.Group("/api")
 
-	todoRepository := repositories.NewTodoRepository(db) 
+	todoRepository := repositories.NewTodoRepository(db)
 	todoController := controllers.NewTodoController(todoRepository)
 
 	todo := api.Group("/todo")

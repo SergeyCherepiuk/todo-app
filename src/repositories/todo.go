@@ -10,7 +10,7 @@ type TodoRepository interface {
 	Create(models.Todo) error
 }
 
-type TodoRepositoryImpl struct{
+type TodoRepositoryImpl struct {
 	db *sqlx.DB
 }
 

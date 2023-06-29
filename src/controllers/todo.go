@@ -25,6 +25,7 @@ func (controller TodoContoller) GetById(c *fiber.Ctx) error {
 func (controller TodoContoller) GetAll(c *fiber.Ctx) error {
 	todos, err := controller.repository.GetAll()
 	if err != nil {
+		fmt.Println(err)
 		return c.Status(http.StatusInternalServerError).JSON("message: Internal server error")
 	}
 	return c.Status(http.StatusOK).JSON(todos)
@@ -33,6 +34,7 @@ func (controller TodoContoller) GetAll(c *fiber.Ctx) error {
 func (controller TodoContoller) Create(c *fiber.Ctx) error {
 	todo := models.Todo{}
 	if err := c.BodyParser(&todo); err != nil {
+		fmt.Println(err)
 		return c.Status(http.StatusInternalServerError).JSON("message: Internal server error")
 	}
 
@@ -41,6 +43,7 @@ func (controller TodoContoller) Create(c *fiber.Ctx) error {
 	}
 
 	if err := controller.repository.Create(todo); err != nil {
+		fmt.Println(err)
 		return c.Status(http.StatusInternalServerError).JSON("message: Internal server error")
 	}
 

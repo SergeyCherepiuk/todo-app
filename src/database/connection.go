@@ -22,5 +22,6 @@ func Connect() *sqlx.DB {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Connected to the database successully")
 	return db
 }
