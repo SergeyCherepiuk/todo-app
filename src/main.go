@@ -22,8 +22,8 @@ func main() {
 
 	api := app.Group("/api")
 
-	todoRepository := new(repositories.TodoRepositoryImpl)
-	todoController := controllers.TodoContoller{Repository: *todoRepository}
+	todoRepository := repositories.NewTodoRepository(db) 
+	todoController := controllers.NewTodoController(todoRepository)
 
 	todo := api.Group("/todo")
 	todo.Get("/:id", todoController.GetById)

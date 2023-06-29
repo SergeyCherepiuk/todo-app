@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/SergeyCherepiuk/todo-app/src/models"
@@ -9,7 +10,11 @@ import (
 )
 
 type TodoContoller struct {
-	Repository repositories.TodoRepositoryImpl
+	repository repositories.TodoRepository
+}
+
+func NewTodoController(repository repositories.TodoRepository) *TodoContoller {
+	return &TodoContoller{repository: repository}
 }
 
 func (controller TodoContoller) GetById(c *fiber.Ctx) error {
@@ -18,7 +23,7 @@ func (controller TodoContoller) GetById(c *fiber.Ctx) error {
 }
 
 func (controller TodoContoller) GetAll(c *fiber.Ctx) error {
-	todos, err := controller.Repository.GetAll()
+	todos, err := controller.repository.GetAll()
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON("message: Internal server error")
 	}
@@ -26,7 +31,7 @@ func (controller TodoContoller) GetAll(c *fiber.Ctx) error {
 }
 
 func (controller TodoContoller) Create(c *fiber.Ctx) error {
-	todo := new(models.Todo)
+	todo := models.Todo{}
 	if err := c.BodyParser(&todo); err != nil {
 		return c.Status(http.StatusInternalServerError).JSON("message: Internal server error")
 	}
@@ -35,7 +40,7 @@ func (controller TodoContoller) Create(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON("message: Not enough information provided")
 	}
 
-	if err := controller.Repository.Create(*todo); err != nil {
+	if err := controller.repository.Create(todo); err != nil {
 		return c.Status(http.StatusInternalServerError).JSON("message: Internal server error")
 	}
 
