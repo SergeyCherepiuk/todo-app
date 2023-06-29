@@ -18,10 +18,7 @@ const (
 
 func Connect() *sqlx.DB {
 	s := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", user, password, dbname)
-	db, err := sqlx.Open("postgres", s)
-	if err != nil {
-		panic(err)
-	}
+	db := sqlx.MustConnect("postgres", s)
 	fmt.Println("Connected to the database successully")
 	return db
 }

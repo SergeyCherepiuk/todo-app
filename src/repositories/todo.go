@@ -7,7 +7,7 @@ import (
 
 type TodoRepository interface {
 	GetAll() ([]models.Todo, error)
-	Create(models.Todo) error
+	Create(models.Todo) (uint64, error)
 }
 
 type TodoRepositoryImpl struct {
@@ -33,10 +33,12 @@ func (repository TodoRepositoryImpl) GetAll() ([]models.Todo, error) {
 	return todos, nil
 }
 
-func (repository TodoRepositoryImpl) Create(todo models.Todo) error {
-	sql := "INSERT INTO todo (title, category, priority) VALUES ($1, $2, $3)"
-	_, err := repository.db.Exec(sql, todo.Title, todo.Category, todo.Priority)
-	return err
+func (repository TodoRepositoryImpl) Create(todo models.Todo) (uint64, error) {
+	var id uint64
+	sql := "INSERT INTO todo (title, category, priority) VALUES ($1, $2, $3) RETURNING id"
+	row := repository.db.QueryRow(sql, todo.Title, todo.Category, todo.Priority)
+	err := row.Scan(&id)
+	return id, err
 }
 
 func (repository TodoRepositoryImpl) Update(todo models.Todo) error {

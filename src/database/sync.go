@@ -16,8 +16,6 @@ func Sync(db *sqlx.DB) {
 			priority INT
 		);
 	`
-	if _, err := db.Exec(schema); err != nil {
-		panic(err)
-	}
+	db.MustExec(schema)
 	fmt.Println("Database synced successfully")
 }

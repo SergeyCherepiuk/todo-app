@@ -5,7 +5,7 @@ import (
 )
 
 type Todo struct {
-	ID       string `json:"id" db:"id"`
+	ID       uint64 `json:"id" db:"id"`
 	Title    string `json:"title" db:"title"`
 	Category string `json:"category" db:"category"`
 	Priority int    `json:"priority" db:"priority"`
