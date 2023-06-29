@@ -6,8 +6,11 @@ import (
 )
 
 type TodoRepository interface {
+	GetById(uint64) (models.Todo, error)
 	GetAll() ([]models.Todo, error)
-	Create(models.Todo) (uint64, error)
+	Create(models.Todo) (models.Todo, error)
+	Update(uint64) (models.Todo, error)
+	Delete(uint64) error
 }
 
 type TodoRepositoryImpl struct {
@@ -19,34 +22,33 @@ func NewTodoRepository(db *sqlx.DB) *TodoRepositoryImpl {
 }
 
 // TODO: Add id parameter
-func (repository TodoRepositoryImpl) GetById() (models.Todo, error) {
-	//TODO: Implement
-	return models.Todo{}, nil
+func (repository TodoRepositoryImpl) GetById(id uint64) (models.Todo, error) {
+	var todo models.Todo
+	sql := "SELECT * FROM todo WHERE id = $1"
+	row := repository.db.QueryRowx(sql, id)
+	err := row.StructScan(&todo)
+	return todo, err
 }
 
 func (repository TodoRepositoryImpl) GetAll() ([]models.Todo, error) {
 	todos := []models.Todo{}
 	sql := "SELECT * FROM todo"
-	if err := repository.db.Select(&todos, sql); err != nil {
-		return todos, err
-	}
-	return todos, nil
+	err := repository.db.Select(&todos, sql)
+	return todos, err
 }
 
-func (repository TodoRepositoryImpl) Create(todo models.Todo) (uint64, error) {
-	var id uint64
-	sql := "INSERT INTO todo (title, category, priority) VALUES ($1, $2, $3) RETURNING id"
-	row := repository.db.QueryRow(sql, todo.Title, todo.Category, todo.Priority)
-	err := row.Scan(&id)
-	return id, err
+func (repository TodoRepositoryImpl) Create(todo models.Todo) (models.Todo, error) {
+	sql := "INSERT INTO todo (title, category, priority) VALUES ($1, $2, $3)"
+	row := repository.db.QueryRowx(sql, todo.Title, todo.Category, todo.Priority)
+	return todo, row.Err()
 }
 
-func (repository TodoRepositoryImpl) Update(todo models.Todo) error {
+func (repository TodoRepositoryImpl) Update(uint64) (models.Todo, error) {
 	// TODO: Implement
-	return nil
+	return models.Todo{}, nil
 }
 
-func (repository TodoRepositoryImpl) Delete(todo models.Todo) error {
+func (repository TodoRepositoryImpl) Delete(uint64) error {
 	// TODO: Implement
 	return nil
 }

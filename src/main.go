@@ -25,7 +25,7 @@ func main() {
 	todoRepository := repositories.NewTodoRepository(db)
 	todoController := controllers.NewTodoController(todoRepository)
 
-	todo := api.Group("/todo")
+	todo := api.Group("/todos")
 	todo.Get("/:id", todoController.GetById)
 	todo.Get("/", todoController.GetAll)
 	todo.Post("/", todoController.Create)
