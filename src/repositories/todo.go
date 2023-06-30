@@ -14,7 +14,7 @@ type TodoRepository interface {
 	Create(models.Todo) (models.Todo, error)
 	Update(uint64, map[string]any) (models.Todo, error)
 	Delete(uint64) error
-	DeleteAll() error
+	DeleteAll() (uint64, error)
 }
 
 type TodoRepositoryImpl struct {
@@ -25,7 +25,6 @@ func NewTodoRepository(db *sqlx.DB) *TodoRepositoryImpl {
 	return &TodoRepositoryImpl{db: db}
 }
 
-// TODO: Add id parameter
 func (repository TodoRepositoryImpl) GetById(id uint64) (models.Todo, error) {
 	todo := models.Todo{}
 	sql := "SELECT * FROM todo WHERE id = $1"
@@ -41,9 +40,11 @@ func (repository TodoRepositoryImpl) GetAll() ([]models.Todo, error) {
 }
 
 func (repository TodoRepositoryImpl) Create(todo models.Todo) (models.Todo, error) {
-	sql := "INSERT INTO todo (title, category, priority) VALUES ($1, $2, $3)"
+	insertedTodo := models.Todo{}
+	sql := "INSERT INTO todo (title, category, priority) VALUES ($1, $2, $3) RETURNING *"
 	row := repository.db.QueryRowx(sql, todo.Title, todo.Category, todo.Priority)
-	return todo, row.Err()
+	err := row.StructScan(&insertedTodo)
+	return insertedTodo, err
 }
 
 func (repository TodoRepositoryImpl) Update(id uint64, fieldsWithNewValues map[string]any) (models.Todo, error) {
@@ -62,19 +63,25 @@ func (repository TodoRepositoryImpl) Update(id uint64, fieldsWithNewValues map[s
 		updates = append(updates, pair)
 	}
 	sql = append(sql, strings.Join(updates, ", ")...)
-	sql = append(sql, fmt.Sprintf("WHERE id = %d RETURNING *", id)...)
+	sql = append(sql, " WHERE id = $1 RETURNING *"...)
 
-	row := repository.db.QueryRowx(string(sql))
+	row := repository.db.QueryRowx(string(sql), id)
 	err := row.StructScan(&updatedTodo)
 	return updatedTodo, err
 }
 
 func (repository TodoRepositoryImpl) Delete(id uint64) error {
-	// TODO: Implement
-	return nil
+	sql := "DELETE FROM todo WHERE id = $1"
+	res, err := repository.db.Exec(sql, id)
+	if nRows, _ := res.RowsAffected(); nRows < 1 {
+		err = fmt.Errorf("todo with id = %d not found", id)
+	}
+	return err
 }
 
-func (repository TodoRepositoryImpl) DeleteAll() error {
-	// TODO: Implement
-	return nil
+func (repository TodoRepositoryImpl) DeleteAll() (uint64, error) {
+	sql := "DELETE FROM todo"
+	res, err := repository.db.Exec(sql)
+	nRows, _ := res.RowsAffected()
+	return uint64(nRows), err
 }

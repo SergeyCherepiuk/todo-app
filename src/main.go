@@ -31,6 +31,7 @@ func main() {
 	todo.Post("/", todoController.Create)
 	todo.Put("/:id", todoController.Update)
 	todo.Delete("/:id", todoController.Delete)
+	todo.Delete("/", todoController.DeleteAll)
 
 	app.Listen(":8000")
 }

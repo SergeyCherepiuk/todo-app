@@ -6,7 +6,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// TODO: Add id column
 func Sync(db *sqlx.DB) {
 	schema := `
 		CREATE TABLE IF NOT EXISTS todo (
