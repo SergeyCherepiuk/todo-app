@@ -1,6 +1,9 @@
 package repositories
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/SergeyCherepiuk/todo-app/src/models"
 	"github.com/jmoiron/sqlx"
 )
@@ -9,8 +12,9 @@ type TodoRepository interface {
 	GetById(uint64) (models.Todo, error)
 	GetAll() ([]models.Todo, error)
 	Create(models.Todo) (models.Todo, error)
-	Update(uint64) (models.Todo, error)
+	Update(uint64, map[string]any) (models.Todo, error)
 	Delete(uint64) error
+	DeleteAll() error
 }
 
 type TodoRepositoryImpl struct {
@@ -23,10 +27,9 @@ func NewTodoRepository(db *sqlx.DB) *TodoRepositoryImpl {
 
 // TODO: Add id parameter
 func (repository TodoRepositoryImpl) GetById(id uint64) (models.Todo, error) {
-	var todo models.Todo
+	todo := models.Todo{}
 	sql := "SELECT * FROM todo WHERE id = $1"
-	row := repository.db.QueryRowx(sql, id)
-	err := row.StructScan(&todo)
+	err := repository.db.Get(&todo, sql, id)
 	return todo, err
 }
 
@@ -43,12 +46,35 @@ func (repository TodoRepositoryImpl) Create(todo models.Todo) (models.Todo, erro
 	return todo, row.Err()
 }
 
-func (repository TodoRepositoryImpl) Update(uint64) (models.Todo, error) {
-	// TODO: Implement
-	return models.Todo{}, nil
+func (repository TodoRepositoryImpl) Update(id uint64, fieldsWithNewValues map[string]any) (models.Todo, error) {
+	updatedTodo := models.Todo{}
+	sql := []byte("UPDATE todo SET ")
+
+	updates := []string{}
+	for field, newValue := range fieldsWithNewValues {
+		var pair string
+		switch newValue.(type) {
+		case string, byte, rune:
+			pair = fmt.Sprintf("%s = '%s'", field, newValue)
+		default:
+			pair = fmt.Sprintf("%s = %s", field, newValue)
+		}
+		updates = append(updates, pair)
+	}
+	sql = append(sql, strings.Join(updates, ", ")...)
+	sql = append(sql, fmt.Sprintf("WHERE id = %d RETURNING *", id)...)
+
+	row := repository.db.QueryRowx(string(sql))
+	err := row.StructScan(&updatedTodo)
+	return updatedTodo, err
 }
 
-func (repository TodoRepositoryImpl) Delete(uint64) error {
+func (repository TodoRepositoryImpl) Delete(id uint64) error {
+	// TODO: Implement
+	return nil
+}
+
+func (repository TodoRepositoryImpl) DeleteAll() error {
 	// TODO: Implement
 	return nil
 }
