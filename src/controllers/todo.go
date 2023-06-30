@@ -119,6 +119,25 @@ func (controller TodoContoller) Update(c *fiber.Ctx) error {
 	})
 }
 
+func (controller TodoContoller) ToggleCompletion(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(utils.CopyString(c.Params("id")), 10, 64)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(messageResponse{
+			Message: fmt.Sprintf("%s is not valid id", c.Params("id")),
+		})
+	}
+
+	todo, err := controller.repository.ToggleCompletion(id)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
+			Message: err.Error(),
+		})
+	}
+	return c.Status(http.StatusOK).JSON(todoResponse{
+		Todo: todo,
+	})
+}
+
 func (controller TodoContoller) Delete(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(utils.CopyString(c.Params("id")), 10, 64)
 	if err != nil {

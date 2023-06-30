@@ -12,7 +12,8 @@ func Sync(db *sqlx.DB) {
 			id SERIAL PRIMARY KEY,
 			title TEXT,
 			category TEXT,
-			priority INT
+			priority INT,
+			iscompleted BOOLEAN
 		);
 	`
 	db.MustExec(schema)

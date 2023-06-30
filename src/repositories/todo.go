@@ -13,6 +13,7 @@ type TodoRepository interface {
 	GetAll() ([]models.Todo, error)
 	Create(models.Todo) (models.Todo, error)
 	Update(uint64, map[string]any) (models.Todo, error)
+	ToggleCompletion(uint64) (models.Todo, error)
 	Delete(uint64) error
 	DeleteAll() (uint64, error)
 }
@@ -41,8 +42,8 @@ func (repository TodoRepositoryImpl) GetAll() ([]models.Todo, error) {
 
 func (repository TodoRepositoryImpl) Create(todo models.Todo) (models.Todo, error) {
 	insertedTodo := models.Todo{}
-	sql := "INSERT INTO todo (title, category, priority) VALUES ($1, $2, $3) RETURNING *"
-	row := repository.db.QueryRowx(sql, todo.Title, todo.Category, todo.Priority)
+	sql := "INSERT INTO todo (title, category, priority, iscompleted) VALUES ($1, $2, $3, $4) RETURNING *"
+	row := repository.db.QueryRowx(sql, todo.Title, todo.Category, todo.Priority, todo.IsCompleted)
 	err := row.StructScan(&insertedTodo)
 	return insertedTodo, err
 }
@@ -68,6 +69,14 @@ func (repository TodoRepositoryImpl) Update(id uint64, fieldsWithNewValues map[s
 	row := repository.db.QueryRowx(string(sql), id)
 	err := row.StructScan(&updatedTodo)
 	return updatedTodo, err
+}
+
+func (repository TodoRepositoryImpl) ToggleCompletion(id uint64) (models.Todo, error) {
+	todo := models.Todo{}
+	sql := "UPDATE todo SET iscompleted = NOT iscompleted WHERE id = $1 RETURNING *"
+	row := repository.db.QueryRowx(sql, id)
+	err := row.StructScan(&todo)	
+	return todo, err
 }
 
 func (repository TodoRepositoryImpl) Delete(id uint64) error {

@@ -32,6 +32,7 @@ func main() {
 	todo.Get("/", todoController.GetAll)
 	todo.Post("/", todoController.Create)
 	todo.Put("/:id", todoController.Update)
+	todo.Put("/toggle-completion/:id", todoController.ToggleCompletion)
 	todo.Delete("/:id", todoController.Delete)
 	todo.Delete("/", todoController.DeleteAll)
 
