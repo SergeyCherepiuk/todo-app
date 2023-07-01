@@ -44,6 +44,9 @@ func (repository TodoRepositoryImpl) Create(todo models.Todo) (models.Todo, erro
 	insertedTodo := models.Todo{}
 	sql := "INSERT INTO todo (title, category_id, priority, is_completed) VALUES ($1, $2, $3, $4) RETURNING *"
 	row := repository.db.QueryRowx(sql, todo.Title, todo.Category, todo.Priority, todo.IsCompleted)
+	if row.Err() != nil { 
+		return insertedTodo, row.Err()
+	}
 	err := row.StructScan(&insertedTodo)
 	return insertedTodo, err
 }
@@ -54,19 +57,20 @@ func (repository TodoRepositoryImpl) Update(id uint64, fieldsWithNewValues map[s
 
 	updates := []string{}
 	for field, newValue := range fieldsWithNewValues {
-		var pair string
 		switch newValue.(type) {
 		case string, byte, rune:
-			pair = fmt.Sprintf("%s = '%s'", field, newValue)
+			updates = append(updates, fmt.Sprintf("%s = '%s'", field, newValue))
 		default:
-			pair = fmt.Sprintf("%s = %s", field, newValue)
+			updates = append(updates, fmt.Sprintf("%s = %s", field, newValue))
 		}
-		updates = append(updates, pair)
 	}
 	sql = append(sql, strings.Join(updates, ", ")...)
 	sql = append(sql, " WHERE id = $1 RETURNING *"...)
 
 	row := repository.db.QueryRowx(string(sql), id)
+	if row.Err() != nil {
+		return updatedTodo, row.Err()
+	}
 	err := row.StructScan(&updatedTodo)
 	return updatedTodo, err
 }
@@ -75,6 +79,9 @@ func (repository TodoRepositoryImpl) ToggleCompletion(id uint64) (models.Todo, e
 	todo := models.Todo{}
 	sql := "UPDATE todo SET is_completed = NOT is_completed WHERE id = $1 RETURNING *"
 	row := repository.db.QueryRowx(sql, id)
+	if row.Err() != nil {
+		return todo, row.Err()
+	}
 	err := row.StructScan(&todo)
 	return todo, err
 }
@@ -82,15 +89,28 @@ func (repository TodoRepositoryImpl) ToggleCompletion(id uint64) (models.Todo, e
 func (repository TodoRepositoryImpl) Delete(id uint64) error {
 	sql := "DELETE FROM todo WHERE id = $1"
 	res, err := repository.db.Exec(sql, id)
-	if nRows, _ := res.RowsAffected(); nRows < 1 {
-		err = fmt.Errorf("todo with id = %d not found", id)
+	if err != nil {
+		return err
 	}
-	return err
+	nRows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nRows < 1 {
+		return fmt.Errorf("todo with id = %d not found", id)
+	}
+	return nil
 }
 
 func (repository TodoRepositoryImpl) DeleteAll() (uint64, error) {
 	sql := "DELETE FROM todo"
 	res, err := repository.db.Exec(sql)
-	nRows, _ := res.RowsAffected()
-	return uint64(nRows), err
+	if err != nil { 
+		return 0, err
+	}
+	nRows, err := res.RowsAffected()
+	if err != nil { 
+		return 0, err
+	}
+	return uint64(nRows), nil
 }
