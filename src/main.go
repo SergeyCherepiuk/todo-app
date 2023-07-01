@@ -36,5 +36,16 @@ func main() {
 	todo.Delete("/:id", todoController.Delete)
 	todo.Delete("/", todoController.DeleteAll)
 
+	categoryRepository := repositories.NewCategoryRepository(db)
+	categoryController := controllers.NewCategoryController(categoryRepository)
+
+	category := api.Group("/categories")
+	category.Get("/:id", categoryController.GetById)
+	category.Get("/", categoryController.GetAll)
+	category.Post("/", categoryController.Create)
+	category.Put("/:id", categoryController.Update)
+	category.Delete("/:id", categoryController.Delete)
+	category.Delete("/", categoryController.DeleteAll)
+
 	app.Listen(":8000")
 }

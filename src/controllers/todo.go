@@ -74,7 +74,7 @@ func (controller TodoContoller) Create(c *fiber.Ctx) error {
 		})
 	}
 
-	if todo.Title == "" || todo.Category == "" {
+	if todo.Title == "" {
 		return c.Status(http.StatusBadRequest).JSON(messageResponse{
 			Message: "not enough information provided",
 		})

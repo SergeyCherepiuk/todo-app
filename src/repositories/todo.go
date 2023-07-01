@@ -42,7 +42,7 @@ func (repository TodoRepositoryImpl) GetAll() ([]models.Todo, error) {
 
 func (repository TodoRepositoryImpl) Create(todo models.Todo) (models.Todo, error) {
 	insertedTodo := models.Todo{}
-	sql := "INSERT INTO todo (title, category, priority, iscompleted) VALUES ($1, $2, $3, $4) RETURNING *"
+	sql := "INSERT INTO todo (title, category_id, priority, is_completed) VALUES ($1, $2, $3, $4) RETURNING *"
 	row := repository.db.QueryRowx(sql, todo.Title, todo.Category, todo.Priority, todo.IsCompleted)
 	err := row.StructScan(&insertedTodo)
 	return insertedTodo, err
@@ -73,9 +73,9 @@ func (repository TodoRepositoryImpl) Update(id uint64, fieldsWithNewValues map[s
 
 func (repository TodoRepositoryImpl) ToggleCompletion(id uint64) (models.Todo, error) {
 	todo := models.Todo{}
-	sql := "UPDATE todo SET iscompleted = NOT iscompleted WHERE id = $1 RETURNING *"
+	sql := "UPDATE todo SET is_completed = NOT is_completed WHERE id = $1 RETURNING *"
 	row := repository.db.QueryRowx(sql, id)
-	err := row.StructScan(&todo)	
+	err := row.StructScan(&todo)
 	return todo, err
 }
 
