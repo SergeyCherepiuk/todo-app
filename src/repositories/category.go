@@ -41,7 +41,7 @@ func (repository CategoryRepositoryImpl) GetAll() ([]models.Category, error) {
 
 func (repository CategoryRepositoryImpl) Create(category models.Category) (models.Category, error) {
 	insertedCategory := models.Category{}
-	sql := "INSERT INTO category (name) VALUE ($1) RETURNING *"
+	sql := "INSERT INTO category (name) VALUES ($1) RETURNING *"
 	row := repository.db.QueryRowx(sql, category.Name)
 	if row.Err() != nil {
 		return insertedCategory, row.Err()
