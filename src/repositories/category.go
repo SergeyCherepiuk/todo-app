@@ -27,21 +27,21 @@ func NewCategoryRepository(db *sqlx.DB) *CategoryRepositoryImpl {
 
 func (repository CategoryRepositoryImpl) GetById(id uint64) (models.Category, error) {
 	category := models.Category{}
-	sql := "SELECT * FROM category WHERE id = $1"
+	sql := "SELECT * FROM categories WHERE id = $1"
 	err := repository.db.Get(&category, sql, id)
 	return category, err
 }
 
 func (repository CategoryRepositoryImpl) GetAll() ([]models.Category, error) {
 	categories := []models.Category{}
-	sql := "SELECT * FROM category"
+	sql := "SELECT * FROM categories"
 	err := repository.db.Select(&categories, sql)
 	return categories, err
 }
 
 func (repository CategoryRepositoryImpl) Create(category models.Category) (models.Category, error) {
 	insertedCategory := models.Category{}
-	sql := "INSERT INTO category (name) VALUES ($1) RETURNING *"
+	sql := "INSERT INTO categories (name) VALUES ($1) RETURNING *"
 	row := repository.db.QueryRowx(sql, category.Name)
 	if row.Err() != nil {
 		return insertedCategory, row.Err()
@@ -52,7 +52,7 @@ func (repository CategoryRepositoryImpl) Create(category models.Category) (model
 
 func (repository CategoryRepositoryImpl) Update(id uint64, fieldsWithNewValues map[string]any) (models.Category, error) {
 	updatedCategory := models.Category{}
-	sql := []byte("UPDATE category SET ")
+	sql := []byte("UPDATE categories SET ")
 
 	updates := []string{}
 	for field, newValue := range fieldsWithNewValues {
@@ -75,7 +75,7 @@ func (repository CategoryRepositoryImpl) Update(id uint64, fieldsWithNewValues m
 }
 
 func (repository CategoryRepositoryImpl) Delete(id uint64) error {
-	sql := "DELETE FROM category WHERE id = $1"
+	sql := "DELETE FROM categories WHERE id = $1"
 	res, err := repository.db.Exec(sql, id)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (repository CategoryRepositoryImpl) Delete(id uint64) error {
 }
 
 func (repository CategoryRepositoryImpl) DeleteAll() (uint64, error) {
-	sql := "DELETE FROM category"
+	sql := "DELETE FROM categories"
 	res, err := repository.db.Exec(sql)
 	if err != nil {
 		return 0, err
