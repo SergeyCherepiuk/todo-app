@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -11,9 +10,7 @@ import (
 
 func validate(c *fiber.Ctx) bool {
 	key := []byte(os.Getenv("JWT_SECRET_KEY"))
-	fmt.Println(key)
 	signedToken := c.Cookies("token")
-	fmt.Println(signedToken)
 	token, err := jwt.Parse(signedToken, func(t *jwt.Token) (any, error) {
 		return key, nil
 	})
