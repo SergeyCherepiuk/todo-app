@@ -9,12 +9,12 @@ import (
 )
 
 type CategoryRepository interface {
-	GetById(uint64) (models.Category, error)
-	GetAll() ([]models.Category, error)
-	Create(models.Category) (models.Category, error)
-	Update(uint64, map[string]any) (models.Category, error)
-	Delete(uint64) error
-	DeleteAll() (uint64, error)
+	GetById(categoryId uint64) (models.Category, error)
+	GetAll(userId uint64) ([]models.Category, error)
+	Create(category models.Category) (models.Category, error)
+	Update(categoryId uint64, fieldsWithNewValues map[string]any) (models.Category, error)
+	Delete(categoryId uint64) error
+	DeleteAll(userId uint64) (uint64, error)
 }
 
 type CategoryRepositoryImpl struct {
@@ -25,24 +25,24 @@ func NewCategoryRepository(db *sqlx.DB) *CategoryRepositoryImpl {
 	return &CategoryRepositoryImpl{db: db}
 }
 
-func (repository CategoryRepositoryImpl) GetById(id uint64) (models.Category, error) {
+func (repository CategoryRepositoryImpl) GetById(categoryId uint64) (models.Category, error) {
 	category := models.Category{}
 	sql := "SELECT * FROM categories WHERE id = $1"
-	err := repository.db.Get(&category, sql, id)
+	err := repository.db.Get(&category, sql, categoryId)
 	return category, err
 }
 
-func (repository CategoryRepositoryImpl) GetAll() ([]models.Category, error) {
+func (repository CategoryRepositoryImpl) GetAll(userId uint64) ([]models.Category, error) {
 	categories := []models.Category{}
-	sql := "SELECT * FROM categories"
-	err := repository.db.Select(&categories, sql)
+	sql := "SELECT * FROM categories WHERE user_id = $1"
+	err := repository.db.Select(&categories, sql, userId)
 	return categories, err
 }
 
 func (repository CategoryRepositoryImpl) Create(category models.Category) (models.Category, error) {
 	insertedCategory := models.Category{}
-	sql := "INSERT INTO categories (name) VALUES ($1) RETURNING *"
-	row := repository.db.QueryRowx(sql, category.Name)
+	sql := "INSERT INTO categories (name, user_id) VALUES ($1, $2) RETURNING *"
+	row := repository.db.QueryRowx(sql, category.Name, category.UserID)
 	if row.Err() != nil {
 		return insertedCategory, row.Err()
 	}
@@ -50,7 +50,7 @@ func (repository CategoryRepositoryImpl) Create(category models.Category) (model
 	return insertedCategory, err
 }
 
-func (repository CategoryRepositoryImpl) Update(id uint64, fieldsWithNewValues map[string]any) (models.Category, error) {
+func (repository CategoryRepositoryImpl) Update(categoryId uint64, fieldsWithNewValues map[string]any) (models.Category, error) {
 	updatedCategory := models.Category{}
 	sql := []byte("UPDATE categories SET ")
 
@@ -66,7 +66,7 @@ func (repository CategoryRepositoryImpl) Update(id uint64, fieldsWithNewValues m
 	sql = append(sql, strings.Join(updates, ", ")...)
 	sql = append(sql, "WHERE id = $1 RETURNING *"...)
 
-	row := repository.db.QueryRowx(string(sql), id)
+	row := repository.db.QueryRowx(string(sql), categoryId)
 	if row.Err() != nil {
 		return updatedCategory, row.Err()
 	}
@@ -74,9 +74,9 @@ func (repository CategoryRepositoryImpl) Update(id uint64, fieldsWithNewValues m
 	return updatedCategory, err
 }
 
-func (repository CategoryRepositoryImpl) Delete(id uint64) error {
+func (repository CategoryRepositoryImpl) Delete(categoryId uint64) error {
 	sql := "DELETE FROM categories WHERE id = $1"
-	res, err := repository.db.Exec(sql, id)
+	res, err := repository.db.Exec(sql, categoryId)
 	if err != nil {
 		return err
 	}
@@ -85,14 +85,14 @@ func (repository CategoryRepositoryImpl) Delete(id uint64) error {
 		return err
 	}
 	if nRows < 1 {
-		return fmt.Errorf("category with id = %d not found", id)
+		return fmt.Errorf("category with id = %d not found", categoryId)
 	}
 	return nil
 }
 
-func (repository CategoryRepositoryImpl) DeleteAll() (uint64, error) {
-	sql := "DELETE FROM categories"
-	res, err := repository.db.Exec(sql)
+func (repository CategoryRepositoryImpl) DeleteAll(userId uint64) (uint64, error) {
+	sql := "DELETE FROM categories WHERE user_id = $1"
+	res, err := repository.db.Exec(sql, userId)
 	if err != nil {
 		return 0, err
 	}

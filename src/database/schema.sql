@@ -11,33 +11,37 @@ CREATE TABLE IF NOT EXISTS todos (
     title VARCHAR(40),
     priority INT,
     is_completed BOOLEAN,
-    -- user_id INT,
+    user_id INT,
     category_id INT
 );
 
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(19)
-    -- user_id INT
+    name VARCHAR(19),
+    user_id INT
 );
 
 -- For development only
--- ALTER TABLE todos
--- DROP CONSTRAINT IF EXISTS fk_user;
+ALTER TABLE todos
+DROP CONSTRAINT IF EXISTS fk_user;
 
--- ALTER TABLE todos
--- ADD CONSTRAINT fk_user
---     FOREIGN KEY (user_id)
---         REFERENCES users (id);
+ALTER TABLE todos
+ADD CONSTRAINT fk_user
+    FOREIGN KEY (user_id)
+        REFERENCES users (id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE;
 
 -- For development only
--- ALTER TABLE categories
--- DROP CONSTRAINT IF EXISTS fk_user;
+ALTER TABLE categories
+DROP CONSTRAINT IF EXISTS fk_user;
 
--- ALTER TABLE categories
--- ADD CONSTRAINT fk_user
---     FOREIGN KEY (user_id)
---         REFERENCES users (id);
+ALTER TABLE categories
+ADD CONSTRAINT fk_user
+    FOREIGN KEY (user_id)
+        REFERENCES users (id)
+            ON DELETE CASCADE 
+            ON UPDATE CASCADE;
 
 -- For development only
 ALTER TABLE todos
@@ -46,6 +50,8 @@ DROP CONSTRAINT IF EXISTS fk_category;
 ALTER TABLE todos
 ADD CONSTRAINT fk_category
     FOREIGN KEY (category_id)
-        REFERENCES categories (id);
+        REFERENCES categories (id)
+            ON DELETE CASCADE 
+            ON UPDATE CASCADE;
 
 COMMIT;

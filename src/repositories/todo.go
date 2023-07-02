@@ -9,13 +9,13 @@ import (
 )
 
 type TodoRepository interface {
-	GetById(uint64) (models.Todo, error)
-	GetAll() ([]models.Todo, error)
-	Create(models.Todo) (models.Todo, error)
-	Update(uint64, map[string]any) (models.Todo, error)
-	ToggleCompletion(uint64) (models.Todo, error)
-	Delete(uint64) error
-	DeleteAll() (uint64, error)
+	GetById(todoId uint64) (models.Todo, error)
+	GetAll(userId uint64) ([]models.Todo, error)
+	Create(todo models.Todo) (models.Todo, error)
+	Update(todoId uint64, fieldsWithNewValues map[string]any) (models.Todo, error)
+	ToggleCompletion(todoId uint64) (models.Todo, error)
+	Delete(todoId uint64) error
+	DeleteAll(userId uint64) (uint64, error)
 }
 
 type TodoRepositoryImpl struct {
@@ -26,24 +26,24 @@ func NewTodoRepository(db *sqlx.DB) *TodoRepositoryImpl {
 	return &TodoRepositoryImpl{db: db}
 }
 
-func (repository TodoRepositoryImpl) GetById(id uint64) (models.Todo, error) {
+func (repository TodoRepositoryImpl) GetById(todoId uint64) (models.Todo, error) {
 	todo := models.Todo{}
 	sql := "SELECT * FROM todos WHERE id = $1"
-	err := repository.db.Get(&todo, sql, id)
+	err := repository.db.Get(&todo, sql, todoId)
 	return todo, err
 }
 
-func (repository TodoRepositoryImpl) GetAll() ([]models.Todo, error) {
+func (repository TodoRepositoryImpl) GetAll(userId uint64) ([]models.Todo, error) {
 	todos := []models.Todo{}
-	sql := "SELECT * FROM todos"
-	err := repository.db.Select(&todos, sql)
+	sql := "SELECT * FROM todos WHERE user_id = $1"
+	err := repository.db.Select(&todos, sql, userId)
 	return todos, err
 }
 
 func (repository TodoRepositoryImpl) Create(todo models.Todo) (models.Todo, error) {
 	insertedTodo := models.Todo{}
-	sql := "INSERT INTO todos (title, category_id, priority, is_completed) VALUES ($1, $2, $3, $4) RETURNING *"
-	row := repository.db.QueryRowx(sql, todo.Title, todo.Category, todo.Priority, todo.IsCompleted)
+	sql := "INSERT INTO todos (title, priority, is_completed, user_id, category_id) VALUES ($1, $2, $3, $4, $5) RETURNING *"
+	row := repository.db.QueryRowx(sql, todo.Title, todo.Priority, todo.IsCompleted, todo.UserID, todo.Category)
 	if row.Err() != nil { 
 		return insertedTodo, row.Err()
 	}
@@ -51,7 +51,7 @@ func (repository TodoRepositoryImpl) Create(todo models.Todo) (models.Todo, erro
 	return insertedTodo, err
 }
 
-func (repository TodoRepositoryImpl) Update(id uint64, fieldsWithNewValues map[string]any) (models.Todo, error) {
+func (repository TodoRepositoryImpl) Update(todoId uint64, fieldsWithNewValues map[string]any) (models.Todo, error) {
 	updatedTodo := models.Todo{}
 	sql := []byte("UPDATE todos SET ")
 
@@ -67,7 +67,7 @@ func (repository TodoRepositoryImpl) Update(id uint64, fieldsWithNewValues map[s
 	sql = append(sql, strings.Join(updates, ", ")...)
 	sql = append(sql, " WHERE id = $1 RETURNING *"...)
 
-	row := repository.db.QueryRowx(string(sql), id)
+	row := repository.db.QueryRowx(string(sql), todoId)
 	if row.Err() != nil {
 		return updatedTodo, row.Err()
 	}
@@ -75,10 +75,10 @@ func (repository TodoRepositoryImpl) Update(id uint64, fieldsWithNewValues map[s
 	return updatedTodo, err
 }
 
-func (repository TodoRepositoryImpl) ToggleCompletion(id uint64) (models.Todo, error) {
+func (repository TodoRepositoryImpl) ToggleCompletion(todoId uint64) (models.Todo, error) {
 	todo := models.Todo{}
 	sql := "UPDATE todos SET is_completed = NOT is_completed WHERE id = $1 RETURNING *"
-	row := repository.db.QueryRowx(sql, id)
+	row := repository.db.QueryRowx(sql, todoId)
 	if row.Err() != nil {
 		return todo, row.Err()
 	}
@@ -86,9 +86,9 @@ func (repository TodoRepositoryImpl) ToggleCompletion(id uint64) (models.Todo, e
 	return todo, err
 }
 
-func (repository TodoRepositoryImpl) Delete(id uint64) error {
+func (repository TodoRepositoryImpl) Delete(todoId uint64) error {
 	sql := "DELETE FROM todos WHERE id = $1"
-	res, err := repository.db.Exec(sql, id)
+	res, err := repository.db.Exec(sql, todoId)
 	if err != nil {
 		return err
 	}
@@ -97,14 +97,14 @@ func (repository TodoRepositoryImpl) Delete(id uint64) error {
 		return err
 	}
 	if nRows < 1 {
-		return fmt.Errorf("todo with id = %d not found", id)
+		return fmt.Errorf("todo with id = %d not found", todoId)
 	}
 	return nil
 }
 
-func (repository TodoRepositoryImpl) DeleteAll() (uint64, error) {
-	sql := "DELETE FROM todos"
-	res, err := repository.db.Exec(sql)
+func (repository TodoRepositoryImpl) DeleteAll(userId uint64) (uint64, error) {
+	sql := "DELETE FROM todos WHERE user_id = $1"
+	res, err := repository.db.Exec(sql, userId)
 	if err != nil { 
 		return 0, err
 	}

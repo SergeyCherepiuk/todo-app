@@ -24,14 +24,14 @@ func NewAuthRepository(db *sqlx.DB) *AuthRepositoryImpl {
 	return &AuthRepositoryImpl{db: db}
 }
 
-type jwtCustomClaims struct {
-	ID uint64 `json:"id"`
+type JwtCustomClaims struct {
+	UserID uint64 `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
-func generateToken(id uint64, expiresIn time.Duration) (string, error) {
-	claims := jwtCustomClaims{
-		id,
+func generateToken(userId uint64, expiresIn time.Duration) (string, error) {
+	claims := JwtCustomClaims{
+		userId,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
 		},
@@ -56,7 +56,7 @@ func (repository AuthRepositoryImpl) SignUp(user models.User) (string, error) {
 		return "", err
 	}
 
-	return generateToken(id, 7 * 24 * time.Hour)
+	return generateToken(id, 7*24*time.Hour)
 }
 
 func (repository AuthRepositoryImpl) Login(user models.User) (string, error) {
@@ -66,9 +66,9 @@ func (repository AuthRepositoryImpl) Login(user models.User) (string, error) {
 		return "", err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(userFromDB.Password),[]byte(user.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(userFromDB.Password), []byte(user.Password)); err != nil {
 		return "", errors.New("wrong password")
 	}
-	
-	return generateToken(userFromDB.ID, 7 * 24 * time.Hour)	
+
+	return generateToken(userFromDB.ID, 7*24*time.Hour)
 }

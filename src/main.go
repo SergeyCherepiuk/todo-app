@@ -39,12 +39,12 @@ func main() {
 
 	todo := api.Group("/todos")
 	todo.Use(authMiddleware)
-	todo.Get("/:id", todoController.GetById)
+	todo.Get("/:todoId", todoController.GetById)
 	todo.Get("/", todoController.GetAll)
 	todo.Post("/", todoController.Create)
-	todo.Put("/:id", todoController.Update)
-	todo.Put("/toggle-completion/:id", todoController.ToggleCompletion)
-	todo.Delete("/:id", todoController.Delete)
+	todo.Put("/:todoId", todoController.Update)
+	todo.Put("/toggle-completion/:todoId", todoController.ToggleCompletion)
+	todo.Delete("/:todoId", todoController.Delete)
 	todo.Delete("/", todoController.DeleteAll)
 
 	categoryRepository := repositories.NewCategoryRepository(db)
@@ -52,11 +52,11 @@ func main() {
 
 	category := api.Group("/categories")
 	category.Use(authMiddleware)
-	category.Get("/:id", categoryController.GetById)
+	category.Get("/:categoryId", categoryController.GetById)
 	category.Get("/", categoryController.GetAll)
 	category.Post("/", categoryController.Create)
-	category.Put("/:id", categoryController.Update)
-	category.Delete("/:id", categoryController.Delete)
+	category.Put("/:categoryId", categoryController.Update)
+	category.Delete("/:categoryId", categoryController.Delete)
 	category.Delete("/", categoryController.DeleteAll)
 
 	app.Listen(":8000")

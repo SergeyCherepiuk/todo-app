@@ -22,14 +22,14 @@ func NewCategoryController(repository repositories.CategoryRepository) *Category
 }
 
 func (controller CategoryController) GetById(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(utils.CopyString(c.Params("id")), 10, 64)
+	categoryId, err := strconv.ParseUint(utils.CopyString(c.Params("categoryId")), 10, 64)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(messageResponse{
-			Message: fmt.Sprintf("%s is not a valid id", c.Params("id")),
+			Message: fmt.Sprintf("%s is not a valid id", c.Params("categoryId")),
 		})
 	}
 
-	category, err := controller.repository.GetById(id)
+	category, err := controller.repository.GetById(categoryId)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
 			Message: err.Error(),
@@ -41,7 +41,9 @@ func (controller CategoryController) GetById(c *fiber.Ctx) error {
 }
 
 func (controller CategoryController) GetAll(c *fiber.Ctx) error {
-	categories, err := controller.repository.GetAll()
+	userId := c.Locals("userId").(uint64)
+
+	categories, err := controller.repository.GetAll(userId)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
 			Message: err.Error(),
@@ -59,12 +61,15 @@ func (controller CategoryController) GetAll(c *fiber.Ctx) error {
 }
 
 func (controller CategoryController) Create(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(uint64)
+
 	category := models.Category{}
 	if err := c.BodyParser(&category); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(messageResponse{
 			Message: "invalid request body",
 		})
 	}
+	category.UserID = userId
 
 	if strings.TrimSpace(category.Name) == "" {
 		return c.Status(http.StatusBadRequest).JSON(messageResponse{
@@ -84,10 +89,10 @@ func (controller CategoryController) Create(c *fiber.Ctx) error {
 }
 
 func (controller CategoryController) Update(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(utils.CopyString(c.Params("id")), 10, 64)
+	categoryId, err := strconv.ParseUint(utils.CopyString(c.Params("categoryId")), 10, 64)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(messageResponse{
-			Message: fmt.Sprintf("%s is not a valid id", c.Params("id")),
+			Message: fmt.Sprintf("%s is not a valid id", c.Params("categoryId")),
 		})
 	}
 
@@ -100,7 +105,7 @@ func (controller CategoryController) Update(c *fiber.Ctx) error {
 		})
 	}
 
-	updatedCategory, err := controller.repository.Update(id, fieldsWithNewValues)
+	updatedCategory, err := controller.repository.Update(categoryId, fieldsWithNewValues)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
 			Message: err.Error(),
@@ -112,14 +117,14 @@ func (controller CategoryController) Update(c *fiber.Ctx) error {
 }
 
 func (controller CategoryController) Delete(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(utils.CopyString(c.Params("id")), 10, 64)
+	categoryId, err := strconv.ParseUint(utils.CopyString(c.Params("categoryId")), 10, 64)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(messageResponse{
-			Message: fmt.Sprintf("%s is not a valid id", c.Params("id")),
+			Message: fmt.Sprintf("%s is not a valid id", c.Params("categoryId")),
 		})
 	}
 
-	if err := controller.repository.Delete(id); err != nil {
+	if err := controller.repository.Delete(categoryId); err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
 			Message: err.Error(),
 		})
@@ -130,7 +135,9 @@ func (controller CategoryController) Delete(c *fiber.Ctx) error {
 }
 
 func (controller CategoryController) DeleteAll(c *fiber.Ctx) error {
-	nRows, err := controller.repository.DeleteAll()
+	userId := c.Locals("userId").(uint64)
+
+	nRows, err := controller.repository.DeleteAll(userId)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
 			Message: err.Error(),
