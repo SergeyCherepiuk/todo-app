@@ -2,22 +2,22 @@ package controllers
 
 import "github.com/SergeyCherepiuk/todo-app/src/models"
 
-type messageResponse struct {
+type MessageResponse struct {
 	Message string `json:"message"`
 }
 
-type todoResponse struct {
+type TodoResponse struct {
 	Todo models.Todo `json:"todo"`
 }
 
-type todosResponse struct {
+type TodosResponse struct {
 	Todos []models.Todo `json:"todos"`
 }
 
-type categoryResponse struct {
+type CategoryResponse struct {
 	Category models.Category `json:"category"`
 }
 
-type categoriesResponse struct {
+type CategoriesResponse struct {
 	Categories []models.Category `json:"categories"`
 }

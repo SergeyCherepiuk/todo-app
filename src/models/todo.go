@@ -6,5 +6,5 @@ type Todo struct {
 	Priority    int    `json:"priority" db:"priority"`
 	IsCompleted bool   `json:"is_completed" db:"is_completed"`
 	UserID      uint64 `json:"user_id" db:"user_id"`
-	Category    uint64 `json:"category_id" db:"category_id"`
+	CategoryID    uint64 `json:"category_id" db:"category_id"`
 }

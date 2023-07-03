@@ -8,7 +8,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func Connect() *sqlx.DB {
+func MustConnect() *sqlx.DB {
 	username := os.Getenv("USERNAME")
 	password := os.Getenv("PASSWORD")
 	dbname := os.Getenv("DBNAME")

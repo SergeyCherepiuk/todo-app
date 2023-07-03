@@ -9,6 +9,7 @@ import (
 )
 
 type CategoryRepository interface {
+	HasCategory(categoryId uint64, userId uint64) (bool, error)
 	GetById(categoryId uint64) (models.Category, error)
 	GetAll(userId uint64) ([]models.Category, error)
 	Create(category models.Category) (models.Category, error)
@@ -25,34 +26,93 @@ func NewCategoryRepository(db *sqlx.DB) *CategoryRepositoryImpl {
 	return &CategoryRepositoryImpl{db: db}
 }
 
+func (repository CategoryRepositoryImpl) HasCategory(categoryId, userId uint64) (bool, error) {
+	query := `SELECT COUNT(*) FROM categories WHERE id = :categoryId AND user_id = :userId`
+	namedParams := map[string]any{
+		"categoryId": categoryId,
+		"userId":     userId,
+	}
+
+	stmt, err := repository.db.PrepareNamed(query)
+	if err != nil {
+		return false, fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	var count uint64
+	if err := stmt.Get(&count, namedParams); err != nil {
+		return false, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	return count > 0, nil
+}
+
 func (repository CategoryRepositoryImpl) GetById(categoryId uint64) (models.Category, error) {
+	query := `SELECT * FROM categories WHERE id = :categoryId`
+	namedParams := map[string]any{
+		"categoryId": categoryId,
+	}
+
+	stmt, err := repository.db.PrepareNamed(query)
+	if err != nil {
+		return models.Category{}, fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
 	category := models.Category{}
-	sql := "SELECT * FROM categories WHERE id = $1"
-	err := repository.db.Get(&category, sql, categoryId)
-	return category, err
+	if err := stmt.Get(&category, namedParams); err != nil {
+		return models.Category{}, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	return category, nil
 }
 
 func (repository CategoryRepositoryImpl) GetAll(userId uint64) ([]models.Category, error) {
+	query := `SELECT * FROM categories WHERE user_id = :userId`
+	namedParams := map[string]any{
+		"userId": userId,
+	}
+
+	stmt, err := repository.db.PrepareNamed(query)
+	if err != nil {
+		return []models.Category{}, fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
 	categories := []models.Category{}
-	sql := "SELECT * FROM categories WHERE user_id = $1"
-	err := repository.db.Select(&categories, sql, userId)
-	return categories, err
+	if err := stmt.Select(&categories, namedParams); err != nil {
+		return []models.Category{}, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	return categories, nil
 }
 
 func (repository CategoryRepositoryImpl) Create(category models.Category) (models.Category, error) {
-	insertedCategory := models.Category{}
-	sql := "INSERT INTO categories (name, user_id) VALUES ($1, $2) RETURNING *"
-	row := repository.db.QueryRowx(sql, category.Name, category.UserID)
-	if row.Err() != nil {
-		return insertedCategory, row.Err()
+	query := `INSERT INTO categories (name, user_id) VALUES (:name, :userId) RETURNING *`
+	namedParams := map[string]any{
+		"name":   category.Name,
+		"userId": category.UserID,
 	}
-	err := row.StructScan(&insertedCategory)
-	return insertedCategory, err
+
+	stmt, err := repository.db.PrepareNamed(query)
+	if err != nil {
+		return models.Category{}, fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	insertedCategory := models.Category{}
+	if err := stmt.Get(&insertedCategory, namedParams); err != nil {
+		return models.Category{}, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	return insertedCategory, nil
 }
 
 func (repository CategoryRepositoryImpl) Update(categoryId uint64, fieldsWithNewValues map[string]any) (models.Category, error) {
-	updatedCategory := models.Category{}
-	sql := []byte("UPDATE categories SET ")
+	query := []byte("UPDATE categories SET ")
+	namedParams := map[string]any{
+		"categoryId": categoryId,
+	}
 
 	updates := []string{}
 	for field, newValue := range fieldsWithNewValues {
@@ -63,42 +123,68 @@ func (repository CategoryRepositoryImpl) Update(categoryId uint64, fieldsWithNew
 			updates = append(updates, fmt.Sprintf("%s = %s", field, newValue))
 		}
 	}
-	sql = append(sql, strings.Join(updates, ", ")...)
-	sql = append(sql, "WHERE id = $1 RETURNING *"...)
+	query = append(query, strings.Join(updates, ", ")...)
+	query = append(query, "WHERE id = :categoryId RETURNING *"...)
 
-	row := repository.db.QueryRowx(string(sql), categoryId)
-	if row.Err() != nil {
-		return updatedCategory, row.Err()
+	stmt, err := repository.db.PrepareNamed(string(query))
+	if err != nil {
+		return models.Category{}, fmt.Errorf("failed to prepare statement: %w", err)
 	}
-	err := row.StructScan(&updatedCategory)
-	return updatedCategory, err
+	defer stmt.Close()
+
+	updatedCategory := models.Category{}
+	if err := stmt.Get(&updatedCategory, namedParams); err != nil {
+		return models.Category{}, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	return updatedCategory, nil
 }
 
 func (repository CategoryRepositoryImpl) Delete(categoryId uint64) error {
-	sql := "DELETE FROM categories WHERE id = $1"
-	res, err := repository.db.Exec(sql, categoryId)
+	query := `DELETE FROM categories WHERE id = :categoryId`
+	namedParams := map[string]any{
+		"categoryId": categoryId,
+	}
+
+	stmt, err := repository.db.PrepareNamed(query)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(namedParams)
+	if err != nil {
+		return fmt.Errorf("failed to execute query: %w", err)
 	}
 	nRows, err := res.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get number of rows: %w", err)
 	}
 	if nRows < 1 {
-		return fmt.Errorf("category with id = %d not found", categoryId)
+		return fmt.Errorf("failed to find category with id %d", categoryId)
 	}
 	return nil
 }
 
 func (repository CategoryRepositoryImpl) DeleteAll(userId uint64) (uint64, error) {
-	sql := "DELETE FROM categories WHERE user_id = $1"
-	res, err := repository.db.Exec(sql, userId)
+	query := `DELETE FROM categories WHERE user_id = :userId`
+	namedParams := map[string]any{
+		"userId": userId,
+	}
+
+	stmt, err := repository.db.PrepareNamed(query)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(namedParams)
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute query: %w", err)
 	}
 	nRows, err := res.RowsAffected()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to get number of rows: %w", err)
 	}
 	return uint64(nRows), nil
 }

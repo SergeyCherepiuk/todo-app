@@ -24,29 +24,29 @@ func NewTodoController(repository repositories.TodoRepository) *TodoContoller {
 func (controller TodoContoller) GetById(c *fiber.Ctx) error {
 	todoId, err := strconv.ParseUint(utils.CopyString(c.Params("todoId")), 10, 64)
 	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(messageResponse{
-			Message: fmt.Sprintf("%s is not a valid id", c.Params("todoId")),
+		return c.Status(http.StatusBadRequest).JSON(MessageResponse{
+			Message: fmt.Sprintf("Invalid id provided: %s", c.Params("todoId")),
 		})
 	}
 
 	todo, err := controller.repository.GetById(todoId)
 	if err != nil {
-		return c.Status(http.StatusNotFound).JSON(messageResponse{
-			Message: fmt.Sprintf("there is no todo with id = %d", todoId),
+		return c.Status(http.StatusNotFound).JSON(MessageResponse{
+			Message: fmt.Sprintf("There is no todo with id %d", todoId),
 		})
 	}
-	return c.Status(http.StatusOK).JSON(todoResponse{
+
+	return c.Status(http.StatusOK).JSON(TodoResponse{
 		Todo: todo,
 	})
 }
 
 func (controller TodoContoller) GetAll(c *fiber.Ctx) error {
 	userId := c.Locals("userId").(uint64)
-
 	todos, err := controller.repository.GetAll(userId)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
-			Message: err.Error(),
+		return c.Status(http.StatusInternalServerError).JSON(MessageResponse{
+			Message: fmt.Sprintf("Internal server error: %s", err.Error()),
 		})
 	}
 
@@ -55,34 +55,36 @@ func (controller TodoContoller) GetAll(c *fiber.Ctx) error {
 	} else {
 		c.Status(http.StatusOK)
 	}
-	return c.JSON(todosResponse{Todos: todos})
+	return c.JSON(TodosResponse{
+		Todos: todos,
+	})
 }
 
 func (controller TodoContoller) Create(c *fiber.Ctx) error {
-	userId := c.Locals("userId").(uint64)
-
 	todo := models.Todo{}
 	if err := c.BodyParser(&todo); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(messageResponse{
-			Message: "invalid request body",
+		return c.Status(http.StatusBadRequest).JSON(MessageResponse{
+			Message: fmt.Sprintf("Invalid request body: %s", err.Error()),
 		})
 	}
+
+	userId := c.Locals("userId").(uint64)
 	todo.UserID = userId
 
 	if strings.TrimSpace(todo.Title) == "" {
-		return c.Status(http.StatusBadRequest).JSON(messageResponse{
-			Message: "not enough information provided",
+		return c.Status(http.StatusBadRequest).JSON(MessageResponse{
+			Message: "Not enought information provided (title is missing)",
 		})
 	}
 
 	insertedTodo, err := controller.repository.Create(todo)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
-			Message: err.Error(),
+		return c.Status(http.StatusInternalServerError).JSON(MessageResponse{
+			Message: fmt.Sprintf("Internal server error: %s", err.Error()),
 		})
 	}
 
-	return c.Status(http.StatusCreated).JSON(todoResponse{
+	return c.Status(http.StatusCreated).JSON(TodoResponse{
 		Todo: insertedTodo,
 	})
 }
@@ -90,8 +92,8 @@ func (controller TodoContoller) Create(c *fiber.Ctx) error {
 func (controller TodoContoller) Update(c *fiber.Ctx) error {
 	todoId, err := strconv.ParseUint(utils.CopyString(c.Params("todoId")), 10, 64)
 	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(messageResponse{
-			Message: fmt.Sprintf("%s is not a valid id", c.Params("todoId")),
+		return c.Status(http.StatusBadRequest).JSON(MessageResponse{
+			Message: fmt.Sprintf("Invalid id provided: %s", c.Params("todoId")),
 		})
 	}
 
@@ -99,18 +101,19 @@ func (controller TodoContoller) Update(c *fiber.Ctx) error {
 	decoder := json.NewDecoder(strings.NewReader(string(c.Body())))
 	decoder.UseNumber()
 	if err := decoder.Decode(&fieldsWithNewValues); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(messageResponse{
-			Message: "invalid request body",
+		return c.Status(http.StatusBadRequest).JSON(MessageResponse{
+			Message: fmt.Sprintf("Invalid request body: %s", err.Error()),
 		})
 	}
 
 	updatedTodo, err := controller.repository.Update(todoId, fieldsWithNewValues)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
-			Message: err.Error(),
+		return c.Status(http.StatusInternalServerError).JSON(MessageResponse{
+			Message: fmt.Sprintf("Internal server error: %s", err.Error()),
 		})
 	}
-	return c.Status(http.StatusOK).JSON(todoResponse{
+
+	return c.Status(http.StatusOK).JSON(TodoResponse{
 		Todo: updatedTodo,
 	})
 }
@@ -118,18 +121,19 @@ func (controller TodoContoller) Update(c *fiber.Ctx) error {
 func (controller TodoContoller) ToggleCompletion(c *fiber.Ctx) error {
 	todoId, err := strconv.ParseUint(utils.CopyString(c.Params("todoId")), 10, 64)
 	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(messageResponse{
-			Message: fmt.Sprintf("%s is not a valid id", c.Params("todoId")),
+		return c.Status(http.StatusBadRequest).JSON(MessageResponse{
+			Message: fmt.Sprintf("Invalid id provided: %s", c.Params("todoId")),
 		})
 	}
 
 	todo, err := controller.repository.ToggleCompletion(todoId)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
-			Message: err.Error(),
+		return c.Status(http.StatusInternalServerError).JSON(MessageResponse{
+			Message: fmt.Sprintf("Internal server error: %s", err.Error()),
 		})
 	}
-	return c.Status(http.StatusOK).JSON(todoResponse{
+
+	return c.Status(http.StatusOK).JSON(TodoResponse{
 		Todo: todo,
 	})
 }
@@ -137,32 +141,33 @@ func (controller TodoContoller) ToggleCompletion(c *fiber.Ctx) error {
 func (controller TodoContoller) Delete(c *fiber.Ctx) error {
 	todoId, err := strconv.ParseUint(utils.CopyString(c.Params("todoId")), 10, 64)
 	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(messageResponse{
-			Message: fmt.Sprintf("%s is not a valid id", c.Params("todoId")),
+		return c.Status(http.StatusBadRequest).JSON(MessageResponse{
+			Message: fmt.Sprintf("Invalid id provided: %s", c.Params("todoId")),
 		})
 	}
 
 	err = controller.repository.Delete(todoId)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
-			Message: err.Error(),
+		return c.Status(http.StatusInternalServerError).JSON(MessageResponse{
+			Message: fmt.Sprintf("Internal server error: %s", err.Error()),
 		})
 	}
-	return c.Status(http.StatusOK).JSON(messageResponse{
-		Message: "todo deleted successfully",
+
+	return c.Status(http.StatusOK).JSON(MessageResponse{
+		Message: "Todo deleted successfully",
 	})
 }
 
 func (controller TodoContoller) DeleteAll(c *fiber.Ctx) error {
 	userId := c.Locals("userId").(uint64)
-
 	nRows, err := controller.repository.DeleteAll(userId)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(messageResponse{
-			Message: err.Error(),
+		return c.Status(http.StatusInternalServerError).JSON(MessageResponse{
+			Message: fmt.Sprintf("Internal server error: %s", err.Error()),
 		})
 	}
-	return c.Status(http.StatusOK).JSON(messageResponse{
+
+	return c.Status(http.StatusOK).JSON(MessageResponse{
 		Message: fmt.Sprintf("%d todo(s) deleted successfully", nRows),
 	})
 }

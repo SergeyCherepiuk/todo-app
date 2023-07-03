@@ -7,7 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func Sync(db *sqlx.DB) {
+func MustSync(db *sqlx.DB) {
 	schema, err := os.ReadFile("./database/schema.sql")
 	if err != nil {
 		panic(err)

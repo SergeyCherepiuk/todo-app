@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -46,24 +47,41 @@ func (repository AuthRepositoryImpl) SignUp(user models.User) (string, error) {
 		return "", err
 	}
 
-	var id uint64
-	sql := "INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id"
-	row := repository.db.QueryRowx(sql, user.Username, hash)
-	if row.Err() != nil {
-		return "", row.Err()
+	query := `INSERT INTO users (username, password) VALUES (:username, :password) RETURNING id`
+	namedParams := map[string]any{
+		"username": user.Username,
+		"password": hash,
 	}
-	if err := row.Scan(&id); err != nil {
-		return "", err
+
+	stmt, err := repository.db.PrepareNamed(query)
+	if err != nil {
+		return "", fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	var id uint64
+	if err := stmt.Get(&id, namedParams); err != nil {
+		return "", fmt.Errorf("failed to execute query: %w", err)
 	}
 
 	return generateToken(id, 7*24*time.Hour)
 }
 
 func (repository AuthRepositoryImpl) Login(user models.User) (string, error) {
+	query := `SELECT * FROM users WHERE username = :username`
+	namedParams := map[string]any{
+		"username": user.Username,
+	}
+
+	stmt, err := repository.db.PrepareNamed(query)
+	if err != nil {
+		return "", fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
 	userFromDB := models.User{}
-	sql := "SELECT * FROM users WHERE username = $1"
-	if err := repository.db.Get(&userFromDB, sql, user.Username); err != nil {
-		return "", err
+	if err := stmt.Get(&userFromDB, namedParams); err != nil {
+		return "", fmt.Errorf("failed to execute query: %w", err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(userFromDB.Password), []byte(user.Password)); err != nil {
